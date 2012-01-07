@@ -1,0 +1,4 @@
+ListEX is a script for managing bulk Twitter List operations better.
+
+I primarily made this because a user may have a list 'A' that serves the same purpose as lists of many others. Trying to follow each member in each list is both time-consuming and tedious. This script automatically follows everyone from every list that is given as input.
+

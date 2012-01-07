@@ -1,33 +1,42 @@
+import keys
 import oauth2 as oauth
+import json
 
-# OAuth Mumbo Jumbo
-def oauth_req(url, key, secret, http_method="GET", post_body=None,http_headers=None):
+consumer = oauth.Consumer(keys.global_consumerkey, keys.global_consumersecret)
+token = oauth.Token(keys.global_accesstoken, keys.global_tokensecret)
+client = oauth.Client(consumer, token)
 
-	consumer = oauth.Consumer(key = global_consumerkey, secret = global_consumersecret)
-	token = oauth.Token(key=key, secret=secret)	
-	client = oauth.Client(consumer, token)
+def GetListMembers(screen_name, slug):
+	"""Returns members in the given twi-list as list"""
 
+	############# ALGO ##################
+	# JSON response format:
+	# l = list(response)
+	# l[0] is the header, l[1] is the body string
+	# 
+	# using a JSONDecoder j
+	# Dictionary object dictn = j.decode(l[1])
+	# 
+	# 'dictn' contains a key: u'users', whose value is a list
+	# users = dictn.get(u'users')
+	# foreach user u
+	# 	add screen_name to list
 
-	# Step 1: Get a request token. This is a temporary token that is used for 
-	# having the user authorize an access token and to sign the request to obtain 
-	# said access token.
+	apistr = 'https://api.twitter.com/1/lists/members.json?slug=' + slug + '&owner_screen_name=' + screen_name + '&cursor=-1'
+	response = client.request(apistr)
+	
+	j = json.JSONDecoder()
+	dictn = j.decode(list(response)[1])
+	users = dictn.get(u'users')
+	
+	memberlist = list()	
+	
+	for u in users:
+		memberlist.add(u.get(u'screen_name'))
+	
+	return memberlist
 
-	resp, content = client.request(request_token_url, "GET")
-	if resp['status'] != '200':
-		raise Exception("Invalid response %s." % resp['status'])
-
-	request_token = dict(urlparse.parse_qsl(content))
-
-	print "Request Token:"
-	print "- oauth_token= %s" % request_token['oauth_token']
-	print "- oauth_token_secret = %s" % request_token['oauth_token_secret']
-	print 
-
-	# Step 2: Redirect to the provider. Since this is a CLI script we do not 
-	# redirect. In a web application you would redirect the user to the URL
-	# below.
-
-	print "Go to the following link in your browser:"
-	print "%s?oauth_token=%s" % (authorize_url, request_token['oauth_token'])
-	print 
-
+#And here’s how you make a POST call:
+#import urllib
+#response, content = myclient.request("http://someservice.com/api/something/", \
+#    method="POST", body=urllib.urlencode({'name': 'value', 'another_name': 'another value'})
