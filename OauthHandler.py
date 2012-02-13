@@ -1,12 +1,20 @@
 import keys
 import oauth2 as oauth
 import json
+import urllib
 
 consumer = oauth.Consumer(keys.global_consumerkey, keys.global_consumersecret)
 token = oauth.Token(keys.global_accesstoken, keys.global_tokensecret)
 client = oauth.Client(consumer, token)
 
-def GetListMembers(screen_name, slug):
+# Authenticate User
+def authenticate():
+	"""Authenticate user before access is granted. Return true/false """
+	return True
+
+
+# Get List Members
+def getlistmembers(screen_name, slug):
 	"""Returns members in the given twi-list as list"""
 
 	############# ALGO ##################
@@ -29,14 +37,31 @@ def GetListMembers(screen_name, slug):
 	dictn = j.decode(list(response)[1])
 	users = dictn.get(u'users')
 	
-	memberlist = list()	
+	memberlist = list()
 	
 	for u in users:
-		memberlist.add(u.get(u'screen_name'))
+		memberlist.append(u.get(u'screen_name'))
 	
 	return memberlist
 
-#And here’s how you make a POST call:
-#import urllib
-#response, content = myclient.request("http://someservice.com/api/something/", \
-#    method="POST", body=urllib.urlencode({'name': 'value', 'another_name': 'another value'})
+
+# Add List Members
+def addlistmembers(target, users):
+	"""Adds all users in argument 'users' as members of twi-list given by 'target' """
+	
+	# Prepare strings for use in POST body
+	userstr = ''
+	for u in users:
+		userstr = userstr + ',' + u
+	
+	targetlist = target.split('/')
+	owner_screen_name = targetlist[0]
+	slug = targetlist[1]
+	
+	# API url
+	apiurl = "https://api.twitter.com/1/lists/members/create_all.json"
+	b = urllib.urlencode({'screen_name': userstr, 'owner_screen_name': owner_screen_name, 'slug': slug})
+	response, content = client.request(apiurl, method="POST", body=b)
+	
+	return response, content
+
