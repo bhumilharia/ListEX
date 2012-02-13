@@ -2,15 +2,89 @@ import keys
 import oauth2 as oauth
 import json
 import urllib
+import urlparse
 
-consumer = oauth.Consumer(keys.global_consumerkey, keys.global_consumersecret)
-token = oauth.Token(keys.global_accesstoken, keys.global_tokensecret)
-client = oauth.Client(consumer, token)
+consumer_key = keys.consumerkey
+consumer_secret = keys.consumersecret
+access_token = ''
+access_token_secret = ''
 
-# Authenticate User
-def authenticate():
-	"""Authenticate user before access is granted. Return true/false """
+consumer = oauth.Consumer(consumer_key, consumer_secret)
+client = oauth.Client(consumer)
+token = None
+
+
+# Authorize User
+def authorize():
+	"""Three-legged authentication (for one-time use). Return true/false """
+	# CLI Three-Legged Auth code from tutorial by simplegeo from his 'python-oauth2' repo on github
+	
+	global client
+	global token
+	
+	request_token_url = 'http://twitter.com/oauth/request_token'
+	access_token_url = 'http://twitter.com/oauth/access_token'
+	authorize_url = 'http://twitter.com/oauth/authorize'
+	
+	resp, content = client.request(request_token_url, "GET")
+	if resp['status'] != '200':
+		raise Exception("Invalid response %s." % resp['status'])
+	
+	request_token = dict(urlparse.parse_qsl(content))
+	
+	print "Go to the following link in your browser:"
+	print "%s?oauth_token=%s" % (authorize_url, request_token['oauth_token'])
+	print 
+	
+	oauth_verifier = raw_input('What is the PIN? ')
+	
+	token = oauth.Token(request_token['oauth_token'], request_token['oauth_token_secret'])
+	token.set_verifier(oauth_verifier)
+	client = oauth.Client(consumer, token)
+
+	resp, content = client.request(access_token_url, "POST")
+	access_token = dict(urlparse.parse_qsl(content))
+	
+	try:
+		oauth_token = access_token['oauth_token']
+		oauth_token_secret = access_token['oauth_token_secret']
+	except:
+		print 'An error may have occurred. Retry.'
+		return False
+	
+	f = open('access.twt', 'w')
+	f.flush()
+	f.write('oauth_token:'+ oauth_token + ';')
+	f.write('oauth_token_secret:'+ oauth_token_secret + ';')
+	f.close()
+	
 	return True
+
+
+def init():
+	"""Initialization of Auth variables"""
+	
+	global client
+	global token
+	
+	# Code to read Access Token from file here:
+	try:
+		f = open('access.twt', 'r')
+		s = f.read()
+	
+		key_value_pairs = s.split(';')	
+		access_token = key_value_pairs[0].split(':')[1]
+		access_token_secret = key_value_pairs[1].split(':')[1]
+	
+		f.close()
+	
+		token = oauth.Token(access_token, access_token_secret)
+		client = oauth.Client(consumer, token)
+	
+		return True
+		
+	except:
+		return False
 
 
 # Get List Members

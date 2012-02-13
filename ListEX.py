@@ -56,32 +56,36 @@ def entry_check(argv):
 		print usage
 		return False
 		
-	elif (sys.argv[1] == "-a"):
-		return OauthHandler.authenticate()	
+	elif (sys.argv[1].lower() in ['-a', '-auth']):
+		OauthHandler.authorize()
+		return False
 		
 	else:
-		return True
+		return OauthHandler.init()
 
 
 ############################################################################################
 
-def main():
+def main(argv=None):
 	
-	proceed = entry_check(sys.argv)
+	if argv is None:
+		argv = sys.argv
+	
+	proceed = entry_check(argv)
 	
 	if(proceed):
 		# Process input
-		target_name = sys.argv[1]
+		target_name = argv[1]
 	
 		mem_list = list()
 		twilists = list()
 	
 		# Read all other arguments
-		for i in range(2, len(sys.argv)):
-			if( sys.argv[i].find('/') == -1 ):
-				mem_list.append(sys.argv[i])
+		for i in range(2, len(argv)):
+			if( argv[i].find('/') == -1 ):
+				mem_list.append(argv[i])
 			else:
-				twilists.append(sys.argv[i])
+				twilists.append(argv[i])
 	
 		copy_lists(target_name, twilists)
 		copy_members(target_name, mem_list)
@@ -91,4 +95,4 @@ def main():
 	return True
 
 if __name__ == "__main__":
-	main()
+	main(sys.argv)
